@@ -2,47 +2,34 @@
 name = 'emacs'
 restart = false
 args = ['--daemon']
-setenvs = {}
-unsetenvs = []
 
 [waybar]
 name = 'waybar'
 restart = false
+setenvs = { 'EXAMPLE_ENV_VAR' = 'JEFF', 'EXAMPLE_ENV_VAR_2' = '0' }
 args = ['--log-level=critical']
-setenvs = {}
-unsetenvs = []
 
 [foot]
 name = 'foot'
 restart = false
 args = ['--server']
-setenvs = {}
-unsetenvs = []
 
 [mako]
 name = 'mako'
 restart = false
-args = []
-setenvs = {}
-unsetenvs = []
 
 [xfsettingsd]
 name = 'xfsettingsd'
 restart = false
 args = ['--replace', '--disable-wm-check', '--daemon']
-setenvs = []
 unsetenvs = ['WAYLAND_DISPLAY']
 
 [sww-daemon]
 name = 'swww'
 restart = false
 args = ['init']
-setenvs = {}
-unsetenvs = []
 
 [swww]
 name = 'swww'
 restart = false
 args = ['img', '~/pictures/wallpapers/wall_04.png']
-setenvs = {}
-unsetenvs = []
