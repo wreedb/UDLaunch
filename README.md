@@ -27,9 +27,9 @@ UDLaunch allows you to configure:
 
 # Installing
 
-Head over to the [releases](https://github.com/wreedb/UDLaunch/releases) page and download __
-the the latest pre-compiled binary. Alternatively, you can build it from source with __
-the instructions below __
+Head over to the [releases](https://github.com/wreedb/UDLaunch/releases) page and download
+the the latest pre-compiled binary. Alternatively, you can build it from source with
+the instructions below
 
 
 # Building
