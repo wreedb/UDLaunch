@@ -1,35 +1,62 @@
-[emacs]
+# by default, UDLaunch will run the first set of processes it finds
+# for example, if it reads this file, it will run the 'default' set.
+# however by passing -u/--use along with the name of a different set
+# in the file, we can specify otherwise.
+
+# the only necessary key to provide is 'name', as all other fields
+# have a default value. those defaults are as follows:
+#######################################################################
+#  restart:   false      - the process will not be killed/restarted   #
+#  args:      []         - no arguments will be given to the process  #
+#  setenvs:   {}         - no environment variables will be set       #
+#  unsetenvs: []         - no environment variables will be unset     #
+#  path:      ''         - UDLaunch will try to find the executable   #
+#######################################################################
+
+
+
+[default]
+
+[default.emacs]
 name = 'emacs'
 restart = false
 args = ['--daemon']
 
-[waybar]
-name = 'waybar'
-restart = false
-setenvs = { 'EXAMPLE_ENV_VAR' = 'JEFF', 'EXAMPLE_ENV_VAR_2' = '0' }
-args = ['--log-level=critical']
-
-[foot]
-name = 'foot'
-restart = false
-args = ['--server']
-
-[mako]
-name = 'mako'
-restart = false
-
-[xfsettingsd]
+[default.xfsettingsd]
 name = 'xfsettingsd'
 restart = false
 args = ['--replace', '--disable-wm-check', '--daemon']
 unsetenvs = ['WAYLAND_DISPLAY']
 
-[sww-daemon]
+# we can specify the path to the executable if UDLaunch is
+# not able to find it. E.g. when the file is not in your PATH 
+path = '/usr/bin/xfsettingsd'
+
+# we can define multiple sets
+# of processess to run
+[wayland]
+
+[wayland.mako]
+name = 'mako'
+restart = false
+
+[wayland.waybar]
+name = 'waybar'
+restart = false
+setenvs = { 'EXAMPLE_ENV_VAR' = 'JEFF', 'EXAMPLE_ENV_VAR_2' = '0' }
+args = ['--log-level=critical']
+
+[wayland.foot]
+name = 'foot'
+restart = false
+args = ['--server']
+
+[wayland.sww-daemon]
 name = 'swww'
 restart = false
 args = ['init']
 
-[swww]
+[wayland.swww]
 name = 'swww'
 restart = false
 args = ['img', '~/pictures/wallpapers/wall_04.png']

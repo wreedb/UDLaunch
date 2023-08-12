@@ -3,6 +3,9 @@ module main
 import os
 import term
 import toml
+import cli { Command, Flag }
+
+
 
 struct Daemon
 {
@@ -19,30 +22,200 @@ const u_env := os.environ()
 
 fn main()
 {
-
-    mut conf := get_home_files()
-
-    mut config_dir  := conf[0]
-    mut config_file := conf[1]
-
-    os.ensure_folder_is_writable(config_dir) or { panic("Couldn't find your '${config_dir}' directory!") }
-
-    if os.exists(config_file) == true
+    mut cmd := Command
     {
-        mut udaemon_array := read_toml_config(config_file)
+        name: 'udlaunch'
+        description: 'Userspace daemon launcher'
+        version: '1.0.0'
+        disable_help: true
+        disable_version: true
+        disable_man: true
+        execute: metafunction
+        posix_mode: true
+    }
 
-        for index in 0 .. udaemon_array.len
+    cmd.add_flag(Flag{
+        flag: .bool
+        required: false
+        name: 'help'
+        abbrev: 'h'
+        description: 'Print this help info'
+    })
+
+
+    cmd.add_flag(Flag{
+        flag: .string
+        required: false
+        name: 'use'
+        abbrev: 'u'
+        description: "Pass a configuration set to use by it's name"
+    })
+
+    cmd.add_flag(Flag{
+        flag: .bool
+        required: false
+        name: 'show-output'
+        abbrev: 's'
+        description: "Force UDLaunch to show the output of all processes, useful for debugging"
+    })
+
+    cmd.add_flag(Flag{
+        flag: .string
+        required: false
+        name: 'config'
+        abbrev: 'c'
+        description: "Specify a configuration file path"
+    })
+
+    cmd.add_flag(Flag{
+        flag: .bool
+        required: false
+        name: 'version'
+        abbrev: 'v'
+        description: "Display version information"
+    })
+
+    cmd.setup()
+    cmd.parse(os.args)
+
+
+}
+
+fn metafunction(cmd Command) !
+{
+    mut flag_help := cmd.flags.get_bool('help')!
+    mut flag_version := cmd.flags.get_bool('version')!
+    mut flag_output := cmd.flags.get_bool('show-output')!
+    mut flag_use := cmd.flags.get_string('use')!
+    mut flag_config := cmd.flags.get_string('config')!
+
+    if flag_use.starts_with('-') == true
+    {
+        log_err('-u/--use flag cannot start with a hypen (-) !')
+        exit(1)
+    }
+
+    if flag_help == true
+    {
+        print_usage()
+        exit(0)
+    }
+
+    if flag_version == true
+    {
+        print_version()
+        exit(0)
+    }
+
+    if flag_config.len > 0
+    {
+
+        if flag_output == true
         {
-            run_daemon(mut udaemon_array[index])
-        }
-        
-        log_ok("processes launched successfully")
+            if flag_use.len > 0
+            {
+                entry_point(flag_config, flag_use, false)
+            }
 
+            else
+            {
+                entry_point(flag_config, '', false)
+            }
+        }
+
+        else if flag_use.len > 0
+        {
+            entry_point(flag_config, flag_use, true)
+        }
+
+        else
+        {
+            entry_point(flag_config, '', true)
+        }
+
+
+    }
+
+    else if flag_output == true
+    {
+
+        mut home_files := get_home_files()
+
+        if flag_use.len > 0
+        {
+            entry_point(home_files[1], flag_use, false)
+        }
+
+        else
+        {
+            entry_point(home_files[1], '', false)
+        }
+
+    }
+
+    else if flag_use.len > 0
+    {
+        mut home_files := get_home_files()
+        entry_point(home_files[1], flag_use, true)
     }
 
     else
     {
-        log_err("Couldn't find your configuration file '${config_file}' ")
+        mut home_files := get_home_files()
+        entry_point(home_files[1], '', true)
+    }
+
+
+
+}
+
+fn entry_point(path string, tbl string, redirect bool)
+{
+
+    if path.len > 0 {
+
+        if os.exists(path) {
+            mut udaemon_array := read_toml_config(path, tbl)
+
+            for i in 0 .. udaemon_array.len
+            {
+                run_daemon(mut udaemon_array[i], redirect)
+            }
+
+            log_ok("processes launched successfully")
+
+        }
+
+        else
+        {
+            log_err("Couldn't find your configuration file '${path}' ")
+        }
+
+    }
+
+    else if path.len == 0
+    {
+        mut conf := get_home_files()
+
+        mut config_file := conf[1]
+
+        if os.exists(config_file) == true
+        {
+            mut udaemon_array := read_toml_config(config_file, tbl)
+
+            for index in 0 .. udaemon_array.len
+            {
+                run_daemon(mut udaemon_array[index], redirect)
+            }
+
+            log_ok("processes launched successfully")
+        }
+
+        else
+        {
+            log_err("Couldn't find your configuration file '${config_file}' ")
+        }
+
     }
 
 }
@@ -64,14 +237,12 @@ fn get_daemon_pids(daemon string) []string
 
 }
 
-fn run_daemon(mut daemon Daemon)
+fn run_daemon(mut daemon Daemon, redirect bool)
 {
 
     mut daemon_process := os.new_process(daemon.abs_path)
     
-    daemon_process.set_redirect_stdio()
-    
-    // TODO allow for user to force stdio to be shown
+    if redirect == true { daemon_process.set_redirect_stdio() }
 
     /* unset env vars */
     if daemon.unsetenvs.len > 0
@@ -121,44 +292,67 @@ fn kill_daemon(pids []string)
     }
 }
 
-fn read_toml_config(path string) []Daemon
+fn read_toml_config(path string, tbl string) []Daemon
 {
 
     mut parsed_config := toml.parse_file(path) or
     {
-        panic('Could not find ~/.config/udlaunch/config.toml')
+        panic('Could not find ${path}')
     }
 
-    mut num_daemons := parsed_config.to_any().array().len
+    mut num_daemons := 0
     mut daemon_array := []Daemon {}
-    
 
-    for i in 0 .. num_daemons
+    if tbl.len > 0
     {
-
-        mut current_daemon := parsed_config.to_any().array()[i]
-        mut this := Daemon {}
-
-        this.name = current_daemon.value('name').string()
-
-        if val := current_daemon.value_opt('restart')   { this.restart   = val.bool()                } else { this.restart   = false }
-        if val := current_daemon.value_opt('args')      { this.args      = val.array().as_strings()  } else { this.args      = []    }
-        if val := current_daemon.value_opt('setenvs')   { this.setenvs   = val.as_map().as_strings() } else { this.setenvs   = {}    }
-        if val := current_daemon.value_opt('unsetenvs') { this.unsetenvs = val.array().as_strings()  } else { this.unsetenvs = []    }
-
-        this.abs_path = os.find_abs_path_of_executable(this.name) or
+        num_daemons = parsed_config.value(tbl).array().len
+        for i in 0 .. num_daemons
         {
-            panic ("Couldn't find the executable for ${this.name} in your PATH!")
+            mut current_daemon := parsed_config.value(tbl).array()[i]
+            mut this := Daemon {}
+
+            this.name = current_daemon.value('name').string()
+
+            if val := current_daemon.value_opt('restart')   { this.restart   = val.bool()                } else { this.restart   = false }
+            if val := current_daemon.value_opt('args')      { this.args      = val.array().as_strings()  } else { this.args      = []    }
+            if val := current_daemon.value_opt('setenvs')   { this.setenvs   = val.as_map().as_strings() } else { this.setenvs   = {}    }
+            if val := current_daemon.value_opt('unsetenvs') { this.unsetenvs = val.array().as_strings()  } else { this.unsetenvs = []    }
+
+            if val := current_daemon.value_opt('path') { this.abs_path = val.string() }
+            else { this.abs_path = os.find_abs_path_of_executable(this.name) or { panic('$err') } }
+
+            daemon_array << this
+
         }
-        
-        daemon_array << this
-    
+    }
+
+    else
+    {
+        num_daemons = parsed_config.to_any().array()[0].array().len
+        for i in 0 .. num_daemons
+        {
+
+            mut current_daemon := parsed_config.to_any().array()[0].array()[i]
+            mut this := Daemon {}
+
+            this.name = current_daemon.value('name').string()
+
+            if val := current_daemon.value_opt('restart')   { this.restart   = val.bool()                } else { this.restart   = false }
+            if val := current_daemon.value_opt('args')      { this.args      = val.array().as_strings()  } else { this.args      = []    }
+            if val := current_daemon.value_opt('setenvs')   { this.setenvs   = val.as_map().as_strings() } else { this.setenvs   = {}    }
+            if val := current_daemon.value_opt('unsetenvs') { this.unsetenvs = val.array().as_strings()  } else { this.unsetenvs = []    }
+
+            if val := current_daemon.value_opt('path') { this.abs_path = val.string() }
+            else { this.abs_path = os.find_abs_path_of_executable(this.name) or { panic('$err') } }
+
+            daemon_array << this
+
+        }
     }
 
     return daemon_array
 
 }
-
 
 fn get_home_files() []string
 {
@@ -241,4 +435,18 @@ fn log_err(msg string)
 {
     mut msg_white := term.white(msg)
     println( term.red( term.bold('UDLAUNCH: ${msg_white}') ) )
+}
+
+fn print_usage()
+{
+    println('${term.bold(term.green("UDLaunch"))}: [flags..] [options..]\n')
+    println('  --help         -h    display this help information')
+    println('  --use          -u    pass a specific config set by name')
+    println('  --config       -c    give a non-default config file path')
+    println('  --show-output  -s    force output of processes to be shown\n')
+}
+
+fn print_version()
+{
+    println('${term.bold(term.green("UDLaunch"))}: v${term.bold(term.magenta("0.1.0"))}\n')
 }
