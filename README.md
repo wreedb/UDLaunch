@@ -25,6 +25,13 @@ UDLaunch allows you to configure:
 -   An absolute path, E.g. when the executable is not in your path
 
 
+# Installing
+
+Head over to the [releases](https://github.com/wreedb/UDLaunch/releases) page and download __
+the the latest pre-compiled binary. Alternatively, you can build it from source with __
+the instructions below __
+
+
 # Building
 
 The only dependency needed to build UDLaunch is the [V](https://vlang.io/) compiler.   
