@@ -1,17 +1,16 @@
-#+TITLE: UDLaunch
 #+AUTHOR: Will Reed
 #+EMAIL: wreedb@skiff.com
 #+LANGUAGE: en
 #+OPTIONS: toc:nil
 
 * What is UDLaunch?
-UDLaunch is a tool for launching multiple programs from a single command \\
-with settings you define in a configuration file (which is in [[https://toml.io/en/][TOML]] format). \\
+UDLaunch is a tool for launching multiple programs from a single command
+with settings you define in a configuration file (which is in [[https://toml.io/en/][TOML]] format).
 
 ** What is it good for?
-It is great for launching user-level [[https://en.wikipedia.org/wiki/Daemon_(computing)][daemons]] when you log in to your computer \\
-Some examples could be a program that sets your wallpaper, a status bar, a \\
-desktop notification daemon, a polkit service or a session manager, but it \\
+It is great for launching user-level [[https://en.wikipedia.org/wiki/Daemon_(computing)][daemons]] when you log in to your computer
+Some examples could be a program that sets your wallpaper, a status bar, a
+desktop notification daemon, a polkit service or a session manager, but it
 can run whatever you need it to.
 
 ** Features of UDLaunch
@@ -23,7 +22,7 @@ UDLaunch allows you to configure:
 - An absolute path, E.g. when the executable is not in your path
 
 * Building
-The only dependency needed to build UDLaunch is the [[https://vlang.io/][V]] compiler. \\
+The only dependency needed to build UDLaunch is the [[https://vlang.io/][V]] compiler.
 Once you have that, you can follow these steps:
 
 #+BEGIN_SRC shell
@@ -32,9 +31,9 @@ v . -prod # for a release build
 v .       # for a debug build
 #+END_SRC
 
-Once built, you can copy the binary to you =~/.local/bin= directory, or \\
-anywhere in your ~PATH~. Then you can copy the [[./example/config.toml][example configuration file]] \\
-into your =~/.config= under a directory called ~udlaunch~, or write one \\
+Once built, you can copy the binary to you =~/.local/bin= directory, or
+anywhere in your ~PATH~. Then you can copy the [[./example/config.toml][example configuration file]]
+into your =~/.config= under a directory called ~udlaunch~, or write one
 from scratch using the example as a reference for the syntax.
 
 * Configuring
