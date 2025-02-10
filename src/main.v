@@ -25,7 +25,7 @@ fn main() {
     mut cmd := Command{
         name:        "udlaunch"
         description: "Userspace daemon launcher"
-        version:     "0.1.1"
+        version:     udlaunch_version
         execute:     metafunction
         posix_mode:  true
         defaults:    struct{
