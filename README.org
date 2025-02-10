@@ -1,77 +1,86 @@
 #+AUTHOR: Will Reed
-#+EMAIL: wreedb@skiff.com
+#+EMAIL: wreed@programmer.net
 #+LANGUAGE: en
 #+OPTIONS: toc:nil
 
 * What is UDLaunch?
 UDLaunch is a tool for launching multiple programs from a single command
-with settings you define in a configuration file (which is in [[https://toml.io/en/][TOML]] format).
+with settings you define in a configuration file.
 
 ** What is it good for?
 It is great for launching user-level [[https://en.wikipedia.org/wiki/Daemon_(computing)][daemons]] when you log in to your computer
 Some examples could be a program that sets your wallpaper, a status bar, a
-desktop notification daemon, a polkit service or a session manager, but it
+desktop notification program, a polkit service or a session manager, but it
 can run whatever you need it to.
 
-** Features of UDLaunch
+** Features
 UDLaunch allows you to configure:
-- The arguments you'd like to append the command when it's run
-- Whether or not the daemon should be killed/restarted when UDLaunch is run
-- Any environment variable(s) that need to be set /or unset/ for your program to run properly
-- Allows for multiple configurations in one config file
-- An absolute path, E.g. when the executable is not in your path
+- Command-line arguments passed to each program
+- If the program should be killed/restarted when UDLaunch is invoked
+- Any environment variables that need to be set /or unset/ for your program to run properly
+- Multiple groups of programs that can be run separately
+- Absolute paths to the executables, such as programs that are not in your path
 
 * Building
 The only dependency needed to build UDLaunch is the [[https://vlang.io/][V]] compiler.
 Once you have that, you can follow these steps:
 
 #+BEGIN_SRC shell
-git clone https://codeberg.org/wreed/udlaunch.git; cd udlaunch
+git clone https://github.com/wreedb/udlaunch; cd udlaunch
 v . -prod # for a release build
 v .       # for a debug build
 #+END_SRC
 
-Once built, you can copy the binary to you =~/.local/bin= directory, or
+** Run-time dependencies
+The following software is needed at run-time, however
+it is highly unlikely that you do not have these already.
+- procps: needed for the ~pgrep~ command
+- util-linux: needed for the ~kill~ command
+
+Once built, you can copy the binary to your =~/.local/bin= directory, or
 anywhere in your ~PATH~. Then you can copy the [[./example/config.toml][example configuration file]]
 into your =~/.config= under a directory called ~udlaunch~, or write one
 from scratch using the example as a reference for the syntax.
+The configuration is written in [[https://toml.io][TOML]] format, and their website has excellent
+documentation for the specification.
 
 * Configuring
-Each entry in the configuration may the following fields:
-- *name*: the name of program's executable file in quotes
-  + required, actually the only required value.
-- *restart*: true to have the program restarted, false otherwise (no quotes)
-  + optional, defaults to ~false~.
-- *args*: arguments to pass to the program, in square brackets, quoted and separated by commas
-  + optional, defaults to ~[]~ (no arguments).
-- *setenvs*: env variables to set for the program in brackets, quoted, assigned with ~=~ and separated by commas
-  + optional, defaults to ~{}~, (no environment variable setting).
-- *unsetenvs*: env variables to unset for the program, in square brackets, quoted, separated by commas
-  + optional, defaults to ~[]~ (no environment variable unsetting).
-- *path*: absolute path the executable file
-  + optional, UDLaunch will attempt to find the program in your ~PATH~.
+Each entry in the configuration may have these fields
+| field     | required | type              | default       |
+|-----------+----------+-------------------+---------------|
+| name      | true     | ~string~          | N/A, required |
+| restart   | false    | ~boolean~         | ~false~       |
+| args      | false    | ~[string]~        | ~[ ]~         |
+| setenvs   | false    | ~{string=string}~ | ~{ }~         |
+| unsetenvs | false    | ~[string]~        | ~[ ]~         |
+| restart   | false    | ~string~          | ~inferred~    |
+
+** NOTE
++ Types displayed in the format ~[type]~ refer to a list of the type specified, separated by commas.
++ Types displayed in the format ~{type=type}~ refer to a mapping of ~type = type~, see the examples section for examples.
++ The ~inferred~ default value of the path field is done by UDLaunch, it will try to find the executable in your ~PATH~
 
 * Examples
-Here are some examples of the configuration, using [[https://wayland.emersion.fr/mako/][Mako]], [[https://gitlab.xfce.org/xfce/xfce4-settings][XFSettingsd]] and [[https://github.com/alexays/waybar][Waybar]]
+Here are some examples for the configuration, using [[https://wayland.emersion.fr/mako/][Mako]], [[https://gitlab.xfce.org/xfce/xfce4-settings][XFSettingsd]] and [[https://github.com/alexays/waybar][Waybar]]
 
 #+BEGIN_SRC toml
 [default]
 [default.xfsettingsd]
-name = 'xfsettingsd'
-args = ['--disable-wm-check', '--daemon']
-unsetenvs = ['WAYLAND_DISPLAY']
-path = '/usr/bin/xfsettingsd'
+name = "xfsettingsd"
+args = ["--disable-wm-check", "--daemon"]
+unsetenvs = ["WAYLAND_DISPLAY"]
+path = "/usr/bin/xfsettingsd"
 
 [default.mako]
-name = 'mako'
+name = "mako"
 restart = true
-setenvs = { 'EXAMPLE_ENV_VAR' = '1' }
+setenvs = { "VAR_1" = "hello", "VAR_2" = "0" }
 
 [default.waybar]
-name = 'waybar'
-args = ['--log-level=critical']
+name = "waybar"
+args = ["--log-level=critical"]
 #+END_SRC
 
 * License and contact information
 The included license is the [[./LICENSE][BSD-2-Clause]] license.
-You can contact me by email at [[mailto:wreedb@skiff.com][wreedb@skiff.com]]
+You can contact me by email at [[mailto:wreed@programmer.net][wreed@programmer.net]]
