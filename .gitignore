@@ -1,8 +1,20 @@
+# compressed files/archives
+*.gz
+*.tgz
+*.tar
+*.xz
+*.txz
+*.zstd
+*.zst
+*.bz2
+*.lzo
+*.bz3
 # Binaries for programs and plugins
 pseudo.org
 main
 udlaunch
 UDLaunch
+packages/
 *.exe
 *.exe~
 *.so

@@ -199,14 +199,14 @@ fn entry_point(options Options) {
 	}
 }
 
-fn check_running(name string) bool {
+fn check_running(path string) bool {
 	// if pgrep gives code 0, that means it's running.
-    if os.execute('pgrep ${name}').exit_code == 0
+    if os.execute("pgrep -f ${path}").exit_code == 0
     { return true } else { return false }
 }
 
-fn get_daemon_pids(cdaemon string) []string {
-	mut pgrep := os.execute('pgrep ${cdaemon}')
+fn get_daemon_pids(daemon_path string) []string {
+	mut pgrep := os.execute("pgrep -f ${daemon_path}")
 
 	if pgrep.exit_code != 0 {
 		return []
@@ -241,12 +241,12 @@ fn run_daemon(mut cdaemon Daemon, verbose bool) {
 
 	// kill it
 	if cdaemon.restart {
-		kill_daemon(get_daemon_pids(cdaemon.name))
+		kill_daemon(get_daemon_pids(cdaemon.abs_path))
 		output.log_info('found ${cdaemon.name} runnning, killing it')
 	}
 
 	// Check if it's running to skip or continue
-	if check_running(cdaemon.name) {
+	if check_running(cdaemon.abs_path) {
 		output.log_ok('${cdaemon.name} is already running')
 		return
 	}

@@ -17,3 +17,7 @@ release:
 check:
     @echo -e "{{esc_yellow}}checking{{reset}}"
     v -check .
+
+package:
+    @echo "Running scripts/package"
+    ./scripts/package

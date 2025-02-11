@@ -1,0 +1,30 @@
+#!/bin/sh
+
+version="$(git describe --tags)"
+pkgdir="packages/udlaunch-${version:-vX.X.X}_amd64"
+releaseflags="-march=x86-64 -mtune=generic -O2 -flto"
+
+echo "Creating package directory structure"
+mkdir -pv "${pkgdir}"
+mkdir -pv "${pkgdir}/"{bin,share}
+mkdir -pv "${pkgdir}/share/"{doc/udlaunch,licenses/udlaunch,examples/udlaunch}
+
+echo "Copying assets to package directory"
+cp -v example/config.toml "${pkgdir}/share/examples/udlaunch/config.toml"
+cp -v README.org "${pkgdir}/share/doc/udlaunch/README.org"
+cp -v LICENSE "${pkgdir}/share/licenses/udlaunch/LICENSE"
+
+v -check . || exit 1
+v -prod -no-prod-options -cc gcc -cflags "${releaseflags}" . -o "${pkgdir}/bin/udlaunch"
+
+echo "Stripping executable"
+strip "${pkgdir}/bin/udlaunch"
+
+echo "Creating archive"
+/usr/bin/env tar -f "${pkgdir}.tar" -vc "${pkgdir}" --no-xattrs --numeric-owner
+
+echo "Compressing archive"
+/usr/bin/env gzip --fast "${pkgdir}.tar"
+
+echo "Generated package: ${pkgdir}.tar.gz"
+/usr/bin/env stat "${pkgdir}.tar.gz"
